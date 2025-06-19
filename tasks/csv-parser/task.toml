@@ -1,0 +1,31 @@
+artifacts = ["/app/csvmini"]
+
+schema_version = "2.0"
+
+[task]
+name = "insight/csvmini-bugfix"
+description = "Fix two bugs in a small RFC-4180 CSV parser: escaped quotes (\"\" inside a quoted field should be one literal quote) and CRLF line endings (the LF after CR must be consumed, not treated as a second newline). Graded by a hidden behavioural suite over quoting and line-ending edge cases."
+
+[metadata]
+difficulty_explanation = "A state-machine parser whose happy path is easy but whose edge cases are notorious: the doubled-quote escape and CRLF handling. The escape bug silently drops embedded quotes; the CRLF bug injects empty rows. Both require understanding the quoting state machine rather than tweaking the obvious path."
+solution_explanation = "In the quoted state, a '\"' followed by another '\"' appends one literal quote and advances two; otherwise it closes the field. On '\\r', consume a following '\\n' before ending the row. Two localized fixes, API unchanged."
+verification_explanation = "A hidden suite covers simple rows, empty fields, quoted commas, escaped quotes (including a fully-quoted field with internal quotes), quoted newlines, CRLF endings (and CRLF == LF equivalence), trailing-newline handling, and empty input. The reference passes all (Oracle = 1); the buggy parser fails the escape and CRLF cases (Nop = 0)."
+category = "SWE"
+subcategory = "Bug Fixing"
+tags = ["python", "parsing", "csv", "rfc4180", "bug-fixing", "state-machine"]
+expert_time_estimate_hours = 1
+relevant_experience = "Writing and debugging text parsers; CSV quoting and line-ending semantics."
+
+[verifier]
+timeout_sec = 600.0
+environment_mode = "separate"
+
+[agent]
+timeout_sec = 3600.0
+
+[environment]
+build_timeout_sec = 600.0
+cpus = 1
+memory_mb = 1024
+storage_mb = 2048
+gpus = 0
