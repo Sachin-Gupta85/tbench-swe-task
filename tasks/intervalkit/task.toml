@@ -1,0 +1,31 @@
+artifacts = ["/app/intervalkit"]
+
+schema_version = "2.0"
+
+[task]
+name = "insight/intervalkit-bugfix"
+description = "Fix four semantic bugs in a half-open integer interval-set library (adjacent-interval merging, interior-removal splitting, touch-point intersection, and half-open overlap), graded by a hidden behavioural test suite plus a randomized model-based fuzzer. The deliverable is the corrected package; the public API must not change."
+
+[metadata]
+difficulty_explanation = "The task is SWE-bench shaped: a small, real-feeling library with a correct-looking implementation that is wrong on the boundary cases that matter for half-open intervals. The four defects are each a single-operator slip (`<` vs `<=`, a `>` that should be `<`, a dropped remainder branch) of the kind that passes casual reading and naive tests but breaks on touching and interior cases. Fixing them requires understanding the half-open invariant (adjacent intervals merge but do not overlap; `end` is excluded) and reasoning about the merge/split algorithms, not just pattern-matching the error text. A fix that over-corrects (e.g. making `overlaps` strict in one direction only, or merging on strict overlap and so splitting adjacency) trades one failing test for another, so the suite's randomized fuzzer against a brute-force set-of-points model catches partial fixes."
+solution_explanation = "In `add`, the right-merge guard must be `self._ivals[i][0] <= end` (not `< end`) so a touching interval is absorbed. In `remove`, the left remainder guard must be `if a < start` (not `a > start`) so the piece before the removed range survives an interior cut. In `intersection`, the emit guard must be strict, `if lo < hi`, so touching intervals produce no zero-length result. In `overlaps`, the predicate must be `a < end and start < b` (strict) to honour half-open semantics. All four are localized; the reference solution changes four lines and leaves the API untouched."
+verification_explanation = "A hidden suite (tests/test_intervalkit.py) exercises every operation through the public API only, with targeted cases for each reported bug (adjacent merge from both sides, interior/prefix/suffix/multi-span removal, touching vs overlapping queries, touching vs overlapping intersection) and a randomized property test that applies 40 random add/remove ops over a bounded domain and compares membership, total length, and the stored invariant (sorted, non-empty, non-touching) against a brute-force set-of-points model across 300 seeds. The reference solution passes all tests (Oracle = 1); the unfixed environment fails 7 (Nop = 0). Because the fuzzer checks the full structural invariant, a solution cannot pass by special-casing the named examples."
+category = "SWE"
+subcategory = "Bug Fixing"
+tags = ["python", "data-structures", "intervals", "bug-fixing", "boundary-conditions", "swe-bench"]
+expert_time_estimate_hours = 1
+relevant_experience = "Reading and debugging a small data-structure library; reasoning about half-open interval semantics and merge/split boundary conditions."
+
+[verifier]
+timeout_sec = 600.0
+environment_mode = "separate"
+
+[agent]
+timeout_sec = 3600.0
+
+[environment]
+build_timeout_sec = 600.0
+cpus = 1
+memory_mb = 1024
+storage_mb = 2048
+gpus = 0
