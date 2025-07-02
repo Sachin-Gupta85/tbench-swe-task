@@ -1,0 +1,31 @@
+artifacts = ["/app/ratelimit"]
+
+schema_version = "2.0"
+
+[task]
+name = "insight/ratelimit-bugfix"
+description = "Fix three bugs in a token-bucket rate limiter (uncapped refill, a strict-vs-nonstrict availability boundary, and consumption that ignores the requested amount). Graded by a hidden behavioural suite with an injectable clock."
+
+[metadata]
+difficulty_explanation = "Three independent single-line defects in a small, realistic limiter, each visible only at a boundary: refill must be clamped to capacity, availability is a >= comparison not >, and a grant must consume `amount` not a hard-coded 1. The injectable clock makes the behaviour deterministic, so the fix is about understanding token-bucket semantics rather than timing."
+solution_explanation = "Clamp refill with min(capacity, tokens + elapsed*rate); compare tokens >= amount; subtract amount on grant. Three one-line changes, API unchanged."
+verification_explanation = "A hidden suite drives the limiter with a passed-in clock: draining exactly capacity, the exact-boundary grant, multi-token consumption, timed refill, the capacity cap after a long idle, and no refill when time goes backwards. The reference passes all (Oracle = 1); the buggy version fails several (Nop = 0)."
+category = "SWE"
+subcategory = "Bug Fixing"
+tags = ["python", "rate-limiting", "token-bucket", "bug-fixing", "boundary-conditions"]
+expert_time_estimate_hours = 1
+relevant_experience = "Implementing and debugging rate limiters; reasoning about token-bucket refill and consumption semantics."
+
+[verifier]
+timeout_sec = 600.0
+environment_mode = "separate"
+
+[agent]
+timeout_sec = 3600.0
+
+[environment]
+build_timeout_sec = 600.0
+cpus = 1
+memory_mb = 1024
+storage_mb = 2048
+gpus = 0
